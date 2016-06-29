@@ -147,11 +147,7 @@ class Product:
 
     displayed_on_eshop = fields.Boolean('Displayed on E-Shop?', select=True)
     long_description = fields.Text('Long Description')
-    media = fields.One2Many(
-        "product.media", "product", "Media", states={
-            'invisible': Bool(Eval('use_template_images'))
-        }, depends=['use_template_images']
-    )
+    media = fields.One2Many("product.media", "product", "Media")
     images = fields.Function(
         fields.One2Many('nereid.static.file', None, 'Images'),
         getter='get_product_images'
@@ -167,15 +163,16 @@ class Product:
     default_image = fields.Function(
         fields.Many2One('nereid.static.file', 'Image'), 'get_default_image',
     )
+
+    # XXX: These fields are left here for legacy reasons. They are
+    # deprecated.
     use_template_description = fields.Boolean("Use template's description")
     use_template_images = fields.Boolean("Use template's images")
 
     @classmethod
     def view_attributes(cls):
         return super(Product, cls).view_attributes() + [
-            ('//page[@id="desc"]', 'states', {
-                'invisible': Bool(Eval('use_template_description'))
-            }), ('//page[@id="ecomm_det"]', 'states', {
+            ('//page[@id="ecomm_det"]', 'states', {
                 'invisible': Not(Bool(Eval('displayed_on_eshop')))
             }), ('//page[@id="related_products"]', 'states', {
                 'invisible': Not(Bool(Eval('displayed_on_eshop')))
@@ -214,9 +211,6 @@ class Product:
     @classmethod
     def __setup__(cls):
         super(Product, cls).__setup__()
-        cls.description.states['invisible'] = Bool(
-            Eval('use_template_description')
-        )
         cls._error_messages.update({
             'unique_uri': ('URI of Product must be Unique'),
         })
@@ -246,14 +240,6 @@ class Product:
         if not self.uri and self.template:
             return slugify(self.template.name)
         return self.uri
-
-    @staticmethod
-    def default_use_template_description():
-        return True
-
-    @staticmethod
-    def default_use_template_images():
-        return True
 
     @classmethod
     def check_uri_uniqueness(cls, products):
@@ -475,18 +461,18 @@ class Product:
         """
         Get long description of product.
 
-        If the product is set to use the template's long description, then
-        the template long description is sent back.
+        If the product has a long description, then it is used else
+        the template's long description is used.
 
         The returned value is a `~jinja2.Markup` object which makes it
         HTML safe and can be used directly in templates. It is recommended
         to use this method instead of trying to wrap this logic in the
         templates.
         """
-        if self.use_template_description:
-            description = self.template.long_description
-        else:
+        if self.long_description:
             description = self.long_description
+        else:
+            description = self.template.long_description
 
         return Markup(description or '')
 
@@ -494,18 +480,18 @@ class Product:
         """
         Get description of product.
 
-        If the product is set to use the template's description, then
-        the template description is sent back.
+        If the product has a description, then it is used else
+        the template's description is used.
 
         The returned value is a `~jinja2.Markup` object which makes it
         HTML safe and can be used directly in templates. It is recommended
         to use this method instead of trying to wrap this logic in the
         templates.
         """
-        if self.use_template_description:
-            description = self.template.description
-        else:
+        if self.description:
             description = self.description
+        else:
+            description = self.template.description
         return Markup(description or '')
 
     def get_product_images(self, name=None):
@@ -521,12 +507,13 @@ class Product:
     def get_images(self):
         """
         Get images of product variant.
-        If the product is set to use the template's images, then
-        the template images is sent back.
+
+        If the variant does not have images, then the template's images are
+        sent.
         """
-        if self.use_template_images:
-            return self.template.images
-        return self.images
+        if self.images:
+            return self.images
+        return self.template.images
 
 
 class ProductsRelated(ModelSQL):

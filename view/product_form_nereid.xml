@@ -7,8 +7,6 @@ this repository contains the full copyright notices and license terms. -->
             <newline/>
             <label name="displayed_on_eshop"/>
             <field name="displayed_on_eshop"/>
-            <label name="use_template_description"/>
-            <field name="use_template_description"/>
     </xpath>
     <xpath expr="/form/separator[@name=&quot;description&quot;]"
         position="replace_attributes">
@@ -29,8 +27,6 @@ this repository contains the full copyright notices and license terms. -->
         <page string="E-Commerce Details" id="ecomm_det">
             <label name="uri"/>
             <field name="uri"/>
-            <label name="use_template_images"/>
-            <field name="use_template_images"/>
             <field name="media" colspan="4"/>
         </page>
         <page string="Related Products" col="4" id="related_products">

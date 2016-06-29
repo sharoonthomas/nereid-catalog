@@ -219,8 +219,8 @@ class TestProduct(NereidTestCase):
     def test0030_get_variant_description(self):
         """
         Test to get variant description.
-        If use_template_description is false, show description
-        of variant else show description of product template
+
+        If there is a variant description get that, if not template's
         """
         with Transaction().start(DB_NAME, USER, context=CONTEXT):
             self.setup_defaults()
@@ -238,11 +238,9 @@ class TestProduct(NereidTestCase):
                 'products': [('create', self.Template.default_products())],
             }])
 
-            # setting use_template_description to false
-            # and adding variant description
+            # adding variant description
             product_variant, = product_template.products
             self.Product.write([product_variant], {
-                'use_template_description': False,
                 'description': 'Description of product',
             })
 
@@ -250,10 +248,11 @@ class TestProduct(NereidTestCase):
                 product_variant.get_description(),
                 'Description of product'
             )
-            # setting use_template_description to true
+
+            # removing variant description
             # description of variant should come from product template
             self.Product.write([product_variant], {
-                'use_template_description': True,
+                'description': None,
             })
 
             self.assertEqual(
@@ -265,8 +264,8 @@ class TestProduct(NereidTestCase):
         """
         Test to get variant images.
 
-        If boolean field use_template_images is true return images
-        of product template else return images of variant
+        If variant has images, then use that. if not return the
+        template's images
         """
         Product = POOL.get('product.product')
         StaticFolder = POOL.get("nereid.static.folder")
@@ -310,17 +309,15 @@ class TestProduct(NereidTestCase):
 
             product, = product_template.products
 
+            # from template
+            self.assertEqual(product.get_images()[0].id, file1.id)
+
             Product.write([product], {
                 'media': [('create', [{
                     'static_file': file1.id,
                 }])]
             })
-
             self.assertEqual(product.get_images()[0].id, file.id)
-            Product.write([product], {
-                'use_template_images': False,
-            })
-            self.assertEqual(product.get_images()[0].id, file1.id)
 
     def test0040_test_uri_uniqueness(self):
         """
